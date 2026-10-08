@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 신나는 발표자 랜덤 추첨기 ✨</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts (Gothic A1 / Jua) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gothic+A1:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        jua: ['Jua', 'sans-serif'],
+                        gothic: ['Gothic A1', 'sans-serif'],
+                    },
+                    colors: {
+                        pastelYellow: '#FFF9C4',
+                        pastelPink: '#FFD1DC',
+                        pastelBlue: '#E1F5FE',
+                        pastelGreen: '#E8F5E9',
+                        pastelPurple: '#F3E5F5',
+                        pastelOrange: '#FFE0B2',
+                        brandPrimary: '#6C5CE7',
+                        brandAccent: '#FF7675'
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.6s ease-in-out infinite',
+                        'pulse-fast': 'pulse 0.4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        popIn: {
+                            '0%': { transform: 'scale(0.3) rotate(-5deg)', opacity: '0' },
+                            '70%': { transform: 'scale(1.1) rotate(2deg)', opacity: '1' },
+                            '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Gothic A1', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+            min-height: 100vh;
+        }
+
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-shadow {
+            box-shadow: 0 6px 0px rgba(0, 0, 0, 0.15);
+            transition: all 0.1s ease;
+        }
+
+        .btn-shadow:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.03);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(108, 92, 231, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(108, 92, 231, 0.4);
+        }
+    </style>
+</head>
+<body class="text-slate-800 p-3 md:p-6 flex flex-col justify-between min-h-screen">
+
+    <!-- Top Header Navigation -->
+    <header class="max-w-6xl mx-auto w-full mb-4">
+        <div class="glass-card rounded-3xl p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-2 border-white shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-300 p-3 rounded-2xl shadow-inner text-amber-900 flex items-center justify-center">
+                    <i data-lucide="sparkles" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-jua text-indigo-900 tracking-wide flex items-center gap-2">
+                        발표자 랜덤 뽑기 🎯
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-500 font-medium">우리 반 수업을 더욱 흥미진진하게 만들어주는 발표 추첨기</p>
+                </div>
+            </div>
+
+            <!-- Header Quick Controls -->
+            <div class="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 shadow-sm hover:bg-slate-50 transition">
+                    <i data-lucide="volume-2" id="soundIcon" class="w-4 h-4 text-indigo-600"></i>
+                    <span id="soundText">소리 켜짐</span>
+                </button>
+                <button onclick="openHelpModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 transition">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-indigo-500"></i>
+                    <span>사용 방법</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-grow">
+        
+        <!-- Left Side: Input & Settings (4 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-5">
+            <div class="glass-card rounded-3xl p-5 md:p-6 flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <label for="nameInput" class="font-jua text-lg text-slate-800 flex items-center gap-2">
+                        <i data-lucide="users" class="w-5 h-5 text-indigo-500"></i>
+                        학생 이름 명단 (<span id="studentCount" class="text-indigo-600">0</span>명)
+                    </label>
+                    <div class="flex items-center gap-1">
+                        <button onclick="loadSampleData()" class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg font-semibold transition border border-indigo-100">
+                            샘플 명단
+                        </button>
+                        <button onclick="clearInput()" class="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg font-semibold transition border border-rose-100">
+                            지우기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Textarea -->
+                <div class="relative">
+                    <textarea id="nameInput" rows="7" 
+                        class="w-full p-3.5 text-sm md:text-base border-2 border-indigo-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition bg-white/90 placeholder-slate-400 leading-relaxed font-medium"
+                        placeholder="학생 이름을 줄바꿈(엔터)으로 입력하세요.&#10;예시:&#10;김철수&#10;이영희&#10;박민수&#10;정지원"
+                        oninput="updateStudentCount()"></textarea>
+                </div>
+
+                <!-- Preset Save / Load Buttons -->
+                <div class="flex items-center gap-2 pt-1">
+                    <button onclick="saveClassPreset()" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-200">
+                        <i data-lucide="save" class="w-3.5 h-3.5"></i> 명단 저장하기
+                    </button>
+                    <button onclick="loadClassPreset()" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-200">
+                        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i> 저장된 명단 불러오기
+                    </button>
+                </div>
+
+                <!-- Drawing Options -->
+                <div class="border-t border-slate-200/80 pt-4 mt-1 space-y-3">
+                    <h3 class="font-jua text-sm text-slate-600 flex items-center gap-1.5">
+                        <i data-lucide="sliders" class="w-4 h-4 text-indigo-500"></i> 추첨 옵션
+                    </h3>
+
+                    <!-- Option 1: Exclude Picked -->
+                    <label class="flex items-center justify-between cursor-pointer p-2.5 rounded-xl hover:bg-white/60 transition bg-slate-50/50 border border-slate-100">
+                        <span class="text-xs md:text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            <i data-lucide="user-x" class="w-4 h-4 text-amber-500"></i>
+                            뽑힌 학생 자동 제외하기
+                        </span>
+                        <input type="checkbox" id="excludePickedCheckbox" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-400 accent-indigo-600 cursor-pointer">
+                    </label>
+
+                    <!-- Option 2: Timer Duration -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <span class="text-xs md:text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            <i data-lucide="timer" class="w-4 h-4 text-indigo-500"></i>
+                            추첨 연출 시간
+                        </span>
+                        <select id="timerDurationSelect" class="text-xs md:text-sm border border-slate-300 rounded-lg px-2.5 py-1 bg-white font-semibold text-slate-700 outline-none focus:border-indigo-400">
+                            <option value="2">빠르게 (2초)</option>
+                            <option value="3" selected>보통 (3초)</option>
+                            <option value="5">스릴있게 (5초)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="drawBtn" onclick="startSelection()" 
+                    class="w-full mt-2 py-4 px-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white font-jua text-2xl rounded-2xl btn-shadow flex items-center justify-center gap-3 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="dices" class="w-7 h-7 animate-spin-slow"></i>
+                    <span>발표자 추첨하기!</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Side: Big Result Display Stage (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+            <!-- Stage Display Box -->
+            <div id="stageCard" class="glass-card rounded-3xl p-6 md:p-10 flex flex-col items-center justify-center min-h-[360px] md:min-h-[420px] text-center relative overflow-hidden transition-all duration-300 border-4 border-white shadow-md">
+                
+                <!-- Background decorative elements -->
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-200/40 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-200/40 rounded-full blur-2xl pointer-events-none"></div>
+
+                <!-- State 1: Ready State -->
+                <div id="stateReady" class="flex flex-col items-center gap-4 my-auto">
+                    <div class="w-24 h-24 bg-gradient-to-tr from-amber-100 to-indigo-100 rounded-full flex items-center justify-center text-indigo-500 shadow-inner animate-bounce-short">
+                        <i data-lucide="gift" class="w-12 h-12"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-jua text-slate-700">추첨 준비 완료!</h2>
+                        <p class="text-sm text-slate-500 mt-1 font-medium">왼쪽에서 명단을 확인한 후 '발표자 추첨하기' 버튼을 눌러주세요.</p>
+                    </div>
+                </div>
+
+                <!-- State 2: Countdown / Spinning Animation State -->
+                <div id="stateSpinning" class="hidden flex-col items-center justify-center gap-6 my-auto w-full">
+                    <!-- Dynamic Countdown or Name Roulette Box -->
+                    <div class="relative w-full max-w-md bg-white/90 border-4 border-indigo-200 rounded-3xl p-8 shadow-inner flex flex-col items-center justify-center min-h-[160px]">
+                        <span id="countdownBadge" class="absolute -top-4 bg-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+                            추첨 중...
+                        </span>
+                        
+                        <!-- Rolling Name Text -->
+                        <div id="rollingNameText" class="font-jua text-4xl sm:text-5xl md:text-6xl text-indigo-600 tracking-wider transition-all duration-75">
+                            ???
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full max-w-md bg-slate-200 rounded-full h-3 overflow-hidden p-0.5">
+                        <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full rounded-full w-0 transition-all duration-100"></div>
+                    </div>
+                    <p class="text-xs sm:text-sm font-semibold text-slate-500 animate-pulse">과연 오늘의 행운의 발표자는?! 두근두근!</p>
+                </div>
+
+                <!-- State 3: Winner Revealed State -->
+                <div id="stateWinner" class="hidden flex-col items-center justify-center gap-5 my-auto animate-pop-in w-full">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 text-amber-800 font-jua text-sm md:text-base border border-amber-200 shadow-sm">
+                        <i data-lucide="crown" class="w-4 h-4 text-amber-600"></i>
+                        오늘의 발표자로 선정되었습니다!
+                    </div>
+
+                    <!-- Winner Name Card -->
+                    <div class="w-full max-w-lg bg-gradient-to-r from-amber-50 via-white to-pink-50 border-4 border-amber-300 rounded-3xl p-8 md:p-12 shadow-xl flex flex-col items-center justify-center relative transform hover:scale-102 transition duration-300">
+                        <div class="absolute -top-5 bg-gradient-to-r from-amber-400 to-amber-500 text-white font-jua text-sm md:text-base px-6 py-1 rounded-full shadow-md">
+                            🎉 당첨자 🎉
+                        </div>
+                        
+                        <div id="winnerNameText" class="font-jua text-5xl sm:text-6xl md:text-7xl text-slate-900 tracking-wider my-2 break-all">
+                            김철수
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons after Draw -->
+                    <div class="flex items-center gap-3 mt-2">
+                        <button onclick="startSelection()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-jua text-base rounded-xl btn-shadow flex items-center gap-2 transition">
+                            <i data-lucide="rotate-cw" class="w-4 h-4"></i> 다시 뽑기
+                        </button>
+                        <button id="excludeWinnerBtn" onclick="excludeCurrentWinner()" class="px-4 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-semibold text-xs md:text-sm rounded-xl transition flex items-center gap-1.5">
+                            <i data-lucide="user-minus" class="w-4 h-4"></i> 명단에서 삭제
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- History Section -->
+            <div class="glass-card rounded-3xl p-5 md:p-6 flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                    <h3 class="font-jua text-lg text-slate-800 flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i>
+                        뽑힌 학생 목록 (<span id="historyCount" class="text-indigo-600">0</span>명)
+                    </h3>
+                    <button onclick="clearHistory()" class="text-xs text-slate-500 hover:text-rose-600 font-semibold flex items-center gap-1 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 히스토리 초기화
+                    </button>
+                </div>
+
+                <!-- History Badges Grid -->
+                <div id="historyList" class="flex flex-wrap gap-2 min-h-[48px] max-h-[160px] overflow-y-auto p-1">
+                    <p id="emptyHistoryMsg" class="text-xs text-slate-400 font-medium py-2">아직 뽑힌 발표자가 없습니다.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Help / Instructions -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card bg-white rounded-3xl max-w-md w-full p-6 flex flex-col gap-4 border-2 border-white shadow-2xl animate-pop-in">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-jua text-xl text-slate-800 flex items-center gap-2">
+                    <i data-lucide="help-circle" class="w-5 h-5 text-indigo-500"></i> 사용 방법 안내
+                </h3>
+                <button onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="text-xs md:text-sm text-slate-600 space-y-2.5 font-medium leading-relaxed">
+                <p>1. <strong>학생 명단 입력:</strong> 왼쪽 입력 창에 학생 이름을 줄바꿈(Enter)으로 나열합니다.</p>
+                <p>2. <strong>명단 저장:</strong> '명단 저장하기'를 누르면 다음 수업시간에도 그대로 불러올 수 있습니다.</p>
+                <p>3. <strong>중복 제외 기능:</strong> '뽑힌 학생 자동 제외하기'를 체크하면, 이미 발표한 학생은 목록에서 제거되어 모두에게 발표 기회가 제공됩니다.</p>
+                <p>4. <strong>효과음 및 연출:</strong> 카운트다운 소리와 함께 긴장감 있는 스릴 연출이 진행되며 결과 시 축하 폭죽이 터집니다!</p>
+            </div>
+            <button onclick="closeHelpModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-jua rounded-xl text-base transition mt-2">
+                확인했습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Toast Box -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-800 text-white text-xs md:text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-amber-400"></i>
+        <span id="toastMsg">메시지 내용</span>
+    </div>
+
+    <script>
+        // Global States
+        let soundEnabled = true;
+        let isDrawing = false;
+        let lastWinner = null;
+        let historyList = [];
+        let audioCtx = null;
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Sample Class Student Data
+        const SAMPLE_NAMES = [
+            "강민준", "김서윤", "박도윤", "이하은", "정지호",
+            "최수아", "윤시우", "임지유", "한주원", "오채원",
+            "서건우", "신유나", "권현우", "황지아", "송우진"
+        ];
+
+        /* Web Audio API Sound Synthesizer (No external asset dependency) */
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Play Tick / Drumroll sound
+        function playTickSound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400 + Math.random() * 200, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.05);
+            } catch (e) { console.error(e); }
+        }
+
+        // Play Fanfare / Victory sound on reveal
+        function playVictorySound() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+
+                    gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + idx * 0.1 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(ctx.currentTime + idx * 0.1);
+                    osc.stop(ctx.currentTime + idx * 0.1 + 0.45);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // Toast message display
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.innerText = message;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Sound Toggle Handler
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const text = document.getElementById('soundText');
+            
+            if (soundEnabled) {
+                text.innerText = '소리 켜짐';
+                icon.setAttribute('data-lucide', 'volume-2');
+                icon.className = 'w-4 h-4 text-indigo-600';
+                showToast("소리가 켜졌습니다 🔊");
+            } else {
+                text.innerText = '소리 끔';
+                icon.setAttribute('data-lucide', 'volume-x');
+                icon.className = 'w-4 h-4 text-slate-400';
+                showToast("소리가 무음 처리되었습니다 🔇");
+            }
+            lucide.createIcons();
+        }
+
+        // Help Modal Controls
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // Parse student names from textarea
+        function getStudentNames() {
+            const text = document.getElementById('nameInput').value;
+            return text.split('\n')
+                       .map(name => name.trim())
+                       .filter(name => name.length > 0);
+        }
+
+        // Update name counter label
+        function updateStudentCount() {
+            const names = getStudentNames();
+            document.getElementById('studentCount').innerText = names.length;
+        }
+
+        // Load sample data into text box
+        function loadSampleData() {
+            document.getElementById('nameInput').value = SAMPLE_NAMES.join('\n');
+            updateStudentCount();
+            showToast("샘플 학생 명단을 불러왔습니다 ✨");
+        }
+
+        // Clear input text area
+        function clearInput() {
+            if (confirm("입력된 명단을 모두 지우시겠습니까?")) {
+                document.getElementById('nameInput').value = '';
+                updateStudentCount();
+            }
+        }
+
+        // Save class preset into LocalStorage
+        function saveClassPreset() {
+            const names = getStudentNames();
+            if (names.length === 0) {
+                showToast("저장할 학생 이름을 먼저 입력해주세요!");
+                return;
+            }
+            localStorage.setItem('classroom_student_preset', JSON.stringify(names));
+            showToast("현재 명단이 성공적으로 저장되었습니다! 💾");
+        }
+
+        // Load class preset from LocalStorage
+        function loadClassPreset() {
+            const saved = localStorage.getItem('classroom_student_preset');
+            if (!saved) {
+                showToast("저장된 명단이 없습니다. 먼저 명단을 저장해주세요.");
+                return;
+            }
+            try {
+                const names = JSON.parse(saved);
+                document.getElementById('nameInput').value = names.join('\n');
+                updateStudentCount();
+                showToast("저장된 학급 명단을 불러왔습니다 📂");
+            } catch (e) {
+                showToast("명단을 불러오는 도중 오류가 발생했습니다.");
+            }
+        }
+
+        // Main Selection Process
+        function startSelection() {
+            if (isDrawing) return;
+
+            const names = getStudentNames();
+            if (names.length === 0) {
+                showToast("⚠️ 입력된 학생 이름이 없습니다! 먼저 이름을 입력해 주세요.");
+                return;
+            }
+
+            // Web Audio user gesture activation
+            getAudioContext();
+
+            isDrawing = true;
+            document.getElementById('drawBtn').disabled = true;
+
+            // UI view state transitions
+            document.getElementById('stateReady').classList.add('hidden');
+            document.getElementById('stateWinner').classList.add('hidden');
+            document.getElementById('stateSpinning').classList.remove('hidden');
+            document.getElementById('stateSpinning').classList.add('flex');
+
+            const durationSec = parseInt(document.getElementById('timerDurationSelect').value) || 3;
+            const totalDurationMs = durationSec * 1000;
+            const startTime = Date.now();
+
+            const progressBar = document.getElementById('progressBar');
+            const rollingNameText = document.getElementById('rollingNameText');
+
+            // Pick random winner from array
+            const randomIndex = Math.floor(Math.random() * names.length);
+            const winner = names[randomIndex];
+            lastWinner = winner;
+
+            let intervalDelay = 60; // Initial speed of spinning
+            
+            function spinStep() {
+                const elapsed = Date.now() - startTime;
+                const progressPercent = Math.min((elapsed / totalDurationMs) * 100, 100);
+                progressBar.style.width = `${progressPercent}%`;
+
+                // Display random name during spin
+                const tempName = names[Math.floor(Math.random() * names.length)];
+                rollingNameText.innerText = tempName;
+                playTickSound();
+
+                if (elapsed < totalDurationMs) {
+                    // Gradually slow down near the end
+                    if (progressPercent > 70) {
+                        intervalDelay += 15;
+                    } else if (progressPercent > 50) {
+                        intervalDelay += 8;
+                    }
+                    setTimeout(spinStep, intervalDelay);
+                } else {
+                    // Finish selection
+                    finalizeSelection(winner);
+                }
+            }
+
+            spinStep();
+        }
+
+        // Finalize Selection & Trigger Celebrations
+        function finalizeSelection(winner) {
+            isDrawing = false;
+            document.getElementById('drawBtn').disabled = false;
+
+            // Hide spin state, show winner state
+            document.getElementById('stateSpinning').classList.add('hidden');
+            document.getElementById('stateSpinning').classList.remove('flex');
+            
+            const stateWinner = document.getElementById('stateWinner');
+            stateWinner.classList.remove('hidden');
+            stateWinner.classList.add('flex');
+
+            document.getElementById('winnerNameText').innerText = winner;
+
+            // Play Victory audio & trigger Confetti explosion
+            playVictorySound();
+            triggerConfetti();
+
+            // Append to history
+            addHistory(winner);
+
+            // Handle "Exclude Selected" option if enabled
+            const excludeChecked = document.getElementById('excludePickedCheckbox').checked;
+            if (excludeChecked) {
+                excludeStudentFromList(winner);
+            }
+        }
+
+        // Confetti Particle Explosion
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#6C5CE7', '#FF7675', '#00CEC9', '#FFEAA7', '#FD79A8']
+                });
+            }
+        }
+
+        // Add Winner to History List
+        function addHistory(studentName) {
+            historyList.push({
+                name: studentName,
+                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            });
+            renderHistory();
+        }
+
+        // Render History Badges
+        function renderHistory() {
+            const historyListEl = document.getElementById('historyList');
+            const emptyMsg = document.getElementById('emptyHistoryMsg');
+            document.getElementById('historyCount').innerText = historyList.length;
+
+            if (historyList.length === 0) {
+                historyListEl.innerHTML = '<p id="emptyHistoryMsg" class="text-xs text-slate-400 font-medium py-2">아직 뽑힌 발표자가 없습니다.</p>';
+                return;
+            }
+
+            historyListEl.innerHTML = historyList.map((item, idx) => `
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-100 rounded-xl text-xs font-semibold text-slate-700 shadow-sm animate-pop-in">
+                    <span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold">${idx + 1}</span>
+                    <span class="font-bold text-indigo-900">${item.name}</span>
+                    <span class="text-[10px] text-slate-400 font-normal">(${item.time})</span>
+                </div>
+            `).join('');
+        }
+
+        // Clear History
+        function clearHistory() {
+            if (historyList.length === 0) return;
+            if (confirm("뽑힌 발표자 목록을 초기화하시겠습니까?")) {
+                historyList = [];
+                renderHistory();
+                showToast("히스토리가 초기화되었습니다.");
+            }
+        }
+
+        // Exclude student name from the textarea list
+        function excludeStudentFromList(studentName) {
+            let names = getStudentNames();
+            names = names.filter(n => n !== studentName);
+            document.getElementById('nameInput').value = names.join('\n');
+            updateStudentCount();
+        }
+
+        // Button action to exclude current winner
+        function excludeCurrentWinner() {
+            if (!lastWinner) return;
+            excludeStudentFromList(lastWinner);
+            showToast(`'${lastWinner}' 학생을 명단에서 제외했습니다.`);
+        }
+
+        // On Page Load Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            updateStudentCount();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
